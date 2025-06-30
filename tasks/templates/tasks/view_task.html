@@ -1,0 +1,23 @@
+{% extends 'back.html' %}
+{% block extend_title %}
+<title>{{ task.name }}</title>
+{% endblock %}
+{% block back %}
+<body>
+    <li>
+        <p> Name: {{ task.name }}</p>
+        <p> Due date: {{ task.due_date }}</p>
+        <p> Creator: {{ task.creator }}</p>
+        <p> Assigned to: {{ task.assignee }}</p>
+        <p> Status: {{ task.status }}</p>
+        <p> Description: {{ task.description }}</p>
+        {% if request.user == task.creator %}
+        <br>
+        <input type="button" value="Edit" onclick="location.href='{% url 'edit_task' task.id %}'">
+        <br>
+        <input type="button" value="Remove" onclick="location.href='{% url 'remove_task' task.id %}'">
+        {% endif %}
+    </li>
+
+</body>
+{% endblock %}

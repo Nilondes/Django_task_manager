@@ -36,7 +36,9 @@ class TaskForm(forms.ModelForm):
             'name',
             'description',
             'due_date',
-            'assignee'
+            'assignee',
+            'status'
+
         ]
         widgets = {
             'due_date':
@@ -56,11 +58,7 @@ class TaskForm(forms.ModelForm):
 
 
 class SearchTaskForm(forms.Form):
-    statuses = (
-        ("pending", "pending"),
-        ("done", "done"),
-        ("canceled", "canceled")
-    )
+
     start_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     end_date = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     creator = forms.ModelChoiceField(
@@ -75,7 +73,8 @@ class SearchTaskForm(forms.Form):
         choices=Task.statuses,
         required=False
     )
-    keywords = CharField(max_length=255, required=False, help_text='List keywords separated by spaces, that are present in name or description')
+    keywords = CharField(max_length=255, required=False,
+                         help_text='List keywords separated by spaces, that are present in name or description')
     widgets = {
         'start_date':
             DateInput(attrs={
@@ -100,8 +99,3 @@ class SearchTaskForm(forms.Form):
             self.add_error('end_date', 'End date cannot be earlier than start date')
 
         return cleaned_data
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.fields['creator'].queryset = User.objects.filter(is_superuser=False).order_by('username')
-    #     self.fields['assignee'].queryset = User.objects.filter(is_superuser=False).order_by('username')

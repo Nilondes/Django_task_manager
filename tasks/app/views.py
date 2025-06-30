@@ -87,10 +87,10 @@ def edit_task(request, pk):
         if form.is_valid():
             task = form.save(commit=False)
             task.save()
-            return redirect('user_tasks')
+            return redirect('search_tasks')
     else:
         form = TaskForm(instance=task)
-    return render(request, 'ads/create_task.html', {'form': form})
+    return render(request, 'tasks/create_task.html', {'form': form})
 
 
 def search_tasks(request):
@@ -145,7 +145,7 @@ def view_task(request, pk):
     if not request.user.is_authenticated:
         return redirect('home')
     task = Task.objects.get(pk=pk)
-    if task.creator != request.user or task.assignee != request.user:
+    if task.creator != request.user and task.assignee != request.user:
         return redirect('home')
     context = {'task': task}
     return render(request, 'tasks/view_task.html', context)

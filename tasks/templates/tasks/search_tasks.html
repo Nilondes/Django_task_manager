@@ -1,0 +1,34 @@
+{% extends 'back.html' %}
+{% block extend_title %}
+<title>Search ads</title>
+{% endblock %}
+{% block back %}
+<body>
+<h3>Search filters</h3>
+<form enctype="multipart/form-data" method="post" >
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Search">
+</form>
+{% if tasks %}
+{% for task in tasks %}
+<ul>
+    <li>
+        <p> Name: {{ task.name }}</p>
+        <p> Due date: {{ task.due_date }}</p>
+        <p> Creator: {{ task.creator }}</p>
+        <p> Assigned to: {{ task.assignee }}</p>
+        <p> Status: {{ task.status }}</p>
+        <br>
+        <input type="button" value="View task" onclick="location.href='{% url 'view_task' task.id %}'">
+
+    </li>
+</ul>
+
+<br>
+{% endfor %}
+{% else %}
+There are no tasks with these parameters
+{% endif %}
+</body>
+{% endblock %}
