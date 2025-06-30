@@ -4,11 +4,6 @@ from django.db import models
 from django.utils import timezone
 
 
-class TaskManager(models.Manager):
-    def for_user(self, user):
-        return self.get_queryset().filter(user=user)
-
-
 class Task(models.Model):
     statuses = (
         ("pending", "pending"),
@@ -22,7 +17,6 @@ class Task(models.Model):
     assignee = models.ForeignKey(User, to_field='username', on_delete=models.CASCADE, related_name='assigned_tasks')
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=statuses)
-    objects = TaskManager()
 
     def clean(self):
         if self.due_date < timezone.now().date():

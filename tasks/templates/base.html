@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+  {% block extend_title %}
+  {% endblock %}
+
+</head>
+<body>
+{% block extend_body %}
+{% endblock %}
+<br>
+<input type="button" value="About" onclick="location.href='{% url 'about' %}'">
+<br>
+<input type="button" value="Contact" onclick="location.href='{% url 'contact' %}'">
+</body>
+</html>

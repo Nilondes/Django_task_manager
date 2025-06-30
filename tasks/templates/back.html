@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block extend_body %}
+{% block back %}
+{% endblock %}
+<br>
+<input type="button" value="Back" onclick="location.href='{% url 'home' %}'">
+{% endblock %}
