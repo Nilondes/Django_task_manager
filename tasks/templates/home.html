@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block extend_title %}
+<title>Home</title>
+{% endblock %}
+{% block extend_body %}
+<body>
+<h1>Greetings!</h1>
+{% if request.user.is_authenticated %}
+<br>
+<input type="button" value="Search tasks" onclick="location.href='{% url 'search_tasks' %}'">
+<br>
+<input type="button" value="Create task" onclick="location.href='{% url 'create_task' %}'">
+
+<form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+</form>
+{% else %}
+<form action="{% url 'login' %}">
+    {% csrf_token %}
+    <button type="submit">Login</button>
+</form>
+<br>
+<form action="{% url 'register' %}">
+    {% csrf_token %}
+    <button type="submit">Registration</button>
+</form>
+{% endif %}
+</body>
+{% endblock %}

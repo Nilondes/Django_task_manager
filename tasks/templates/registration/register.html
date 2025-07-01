@@ -1,0 +1,13 @@
+{% extends 'back.html' %}
+{% block extend_title %}
+<title>Register</title>
+{% endblock %}
+{% block back %}
+<body>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Register">
+  </form>
+</body>
+{% endblock %}
