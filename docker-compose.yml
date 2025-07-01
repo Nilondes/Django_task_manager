@@ -1,0 +1,31 @@
+version: "3.9"
+
+networks:
+  backend:
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: nilondes
+      POSTGRES_PASSWORD: tele_test
+      POSTGRES_DB: dj_tasks
+    volumes:
+      - /var/lib/postgresql/data
+    networks:
+      - backend
+  app:
+    build:
+      context: .
+      args:
+        DEPS: dev
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "true"
+      DATABASE_USER: nilondes
+      DATABASE_PASSWORD: tele_test
+      DATABASE_DB: dj_tasks
+      DATABASE_HOST: postgres
+    networks:
+      - backend
