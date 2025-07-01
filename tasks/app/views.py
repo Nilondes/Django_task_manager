@@ -1,13 +1,11 @@
-import datetime
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegistrationForm, TaskForm, SearchTaskForm
 from .models import Task
-from django.contrib.auth.models import User
 from django.db.models import Q
 from functools import reduce
 import operator
-from django.utils import timezone
+
 
 
 def home(request):
@@ -99,8 +97,8 @@ def search_tasks(request):
     if request.method == 'POST':
         form = SearchTaskForm(request.POST)
         if form.is_valid():
-            start_date = form.cleaned_data['start_date'] or timezone.now().date()
-            end_date = form.cleaned_data['end_date'] or datetime.date.max
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
             creator = form.cleaned_data['creator']
             assignee = form.cleaned_data['assignee']
             status = form.cleaned_data['status']
@@ -109,10 +107,11 @@ def search_tasks(request):
             base_query = Q(creator=request.user) | Q(assignee=request.user)
             tasks = Task.objects.filter(base_query)
 
-            tasks = tasks.filter(
-                due_date__gte=start_date,
-                due_date__lte=end_date
-            )
+            if start_date:
+                tasks = tasks.filter(due_date__gte=start_date)
+
+            if end_date:
+                tasks = tasks.filter(due_date__lte=end_date)
 
             if status:
                 tasks = tasks.filter(status=status)
