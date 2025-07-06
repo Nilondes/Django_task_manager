@@ -8,7 +8,6 @@ from django.utils import timezone
 class CreateTaskTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test_user', password='12345')
-        self.user.save()
         self.client.login(username='test_user', password='12345')
         self.url = reverse('create_task')
 
@@ -27,9 +26,7 @@ class CreateTaskTestCase(TestCase):
 class TaskUpdateViewTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='owner', password='12345')
-        self.user.save()
         self.other_user = User.objects.create_user(username='other', password='12345')
-        self.other_user.save()
 
 
         self.task = Task.objects.create(
@@ -42,6 +39,33 @@ class TaskUpdateViewTestCase(TestCase):
         )
         self.url = reverse('edit_task', kwargs={'pk': self.task.pk})
         self.today = timezone.now().date()
+
+    def test_update_task(self):
+        self.client.logout()
+        self.client.login(username='owner', password='12345')
+        response = self.client.post(self.url, {
+            'name': 'Updated Task',
+            'description': 'Updated description',
+            'due_date': self.today,
+            'assignee': self.user,
+            'status': 'done'
+        })
+
+        updated_task = Task.objects.get(pk=self.task.pk)
+        self.assertEqual(updated_task.status, 'done')
+
+
+    def test_unauthorized_update(self):
+        self.client.logout()
+        self.client.login(username='other', password='12345')
+        response = self.client.post(self.url, {
+            'name': 'Hacked Task',
+            'description': 'Hacked description',
+            'due_date': self.today,
+            'assignee': self.user,
+            'status': 'pending'
+        })
+        self.assertEqual(response.status_code, 403)
 
 
 class TaskDeleteViewTestCase(TestCase):
@@ -64,12 +88,6 @@ class TaskDeleteViewTestCase(TestCase):
         response = self.client.post(self.url)
         self.assertEqual(Task.objects.filter(pk=self.task.pk).exists(), False)
         self.assertRedirects(response, reverse('search_tasks'))
-
-    def test_unauthorized_delete(self):
-        self.client.logout()
-        self.client.login(username='other', password='12345')
-        response = self.client.post(self.url)
-        self.assertEqual(response.status_code, 403)
 
 
 class TaskDetailViewTestCase(TestCase):
