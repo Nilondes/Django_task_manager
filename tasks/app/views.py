@@ -1,5 +1,10 @@
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, UpdateView, DeleteView, DetailView
+
 from .forms import RegistrationForm, TaskForm, SearchTaskForm
 from .models import Task
 from django.db.models import Q
@@ -41,59 +46,57 @@ def user_login(request):
         return render(request, 'registration/login.html')
 
 
+@login_required
 def user_logout(request):
-    if not request.user.is_authenticated:
-        return redirect('home')
     if request.method == 'POST':
         logout(request)
     return render(request, 'home.html')
 
 
-def create_task(request):
-    if not request.user.is_authenticated:
-        return redirect('home')
-    if request.method == 'POST':
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            task = form.save(commit=False)
-            task.creator = request.user
-            task.save()
-            return redirect('home')
-    else:
-        form = TaskForm()
-    return render(request, 'tasks/create_task.html', {'form': form})
+class TaskCreateView(LoginRequiredMixin, CreateView):
+    model = Task
+    form_class = TaskForm
+    template_name = 'tasks/create_task.html'
+    success_url = reverse_lazy('search_tasks')
+
+    def form_valid(self, form):
+        form.instance.creator = self.request.user
+        return super().form_valid(form)
 
 
-def remove_task(request, pk):
-    if not request.user.is_authenticated:
-        return redirect('home')
-    task = Task.objects.get(pk=pk)
-    if task.creator != request.user:
-        return redirect('home')
-    task.delete()
-    return redirect('user_tasks')
+class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Task
+    form_class = TaskForm
+    template_name = 'tasks/create_task.html'
+    success_url = reverse_lazy('search_tasks')
+
+    def test_func(self):
+        task = self.get_object()
+        return task.creator == self.request.user
 
 
-def edit_task(request, pk):
-    if not request.user.is_authenticated:
-        return redirect('home')
-    task = Task.objects.get(pk=pk)
-    if task.creator != request.user:
-        return redirect('home')
-    if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            task = form.save(commit=False)
-            task.save()
-            return redirect('search_tasks')
-    else:
-        form = TaskForm(instance=task)
-    return render(request, 'tasks/create_task.html', {'form': form})
+class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Task
+    success_url = reverse_lazy('search_tasks')
+    template_name = 'tasks/task_confirm_delete.html'
+
+    def test_func(self):
+        task = self.get_object()
+        return task.creator == self.request.user
 
 
+class TaskDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Task
+    template_name = 'tasks/view_task.html'
+    context_object_name = 'task'
+
+    def test_func(self):
+        task = self.get_object()
+        return task.creator == self.request.user or task.assignee == self.request.user
+
+
+@login_required
 def search_tasks(request):
-    if not request.user.is_authenticated:
-        return redirect('home')
     if request.method == 'POST':
         form = SearchTaskForm(request.POST)
         if form.is_valid():
@@ -140,9 +143,8 @@ def search_tasks(request):
     return render(request, 'tasks/search_tasks.html', {'form': form})
 
 
+@login_required
 def view_task(request, pk):
-    if not request.user.is_authenticated:
-        return redirect('home')
     task = Task.objects.get(pk=pk)
     if task.creator != request.user and task.assignee != request.user:
         return redirect('home')

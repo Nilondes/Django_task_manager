@@ -47,6 +47,6 @@ It will be available at http://localhost:8000
 To run tests:
 
 ```sh
-$ python /tasks/manage.py tests
+$ python /tasks/manage.py test
 
 ```
