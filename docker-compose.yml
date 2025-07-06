@@ -7,9 +7,9 @@ services:
   postgres:
     image: postgres:14
     environment:
-      POSTGRES_USER: nilondes
-      POSTGRES_PASSWORD: tele_test
-      POSTGRES_DB: dj_tasks
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
     volumes:
       - /var/lib/postgresql/data
     networks:
@@ -23,9 +23,9 @@ services:
       - "8000:8000"
     environment:
       DEBUG: "true"
-      DATABASE_USER: nilondes
-      DATABASE_PASSWORD: tele_test
-      DATABASE_DB: dj_tasks
+      DATABASE_USER: ${PG_USER}
+      DATABASE_PASSWORD: ${PG_PASSWORD}
+      DATABASE_DB: ${PG_DATABASE}
       DATABASE_HOST: postgres
     networks:
       - backend

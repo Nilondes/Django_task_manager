@@ -1,3 +1,4 @@
+.idea/
 *.idea
 *.pyc
 *.pyo
@@ -21,3 +22,4 @@ var/
 wheels/
 .installed.cfg
 *.ipynb_checkpoints
+.env

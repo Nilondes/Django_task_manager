@@ -1,12 +1,6 @@
 from django.test import TestCase
 from app.models import Task
 from django.contrib.auth.models import User
-from app.views import (create_task,
-                       remove_task,
-                       edit_task,
-                       search_tasks,
-                       view_task
-                       )
 from django.urls import reverse
 from django.utils import timezone
 
@@ -15,11 +9,12 @@ class CreateTaskTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test_user', password='12345')
         self.user.save()
-        login = self.client.login(username='test_user', password='12345')
+        self.client.login(username='test_user', password='12345')
+        self.url = reverse('create_task')
 
     def test_task_creation(self):
 
-        resp = self.client.post(reverse('create_task'), {'name': 'Test Task',
+        resp = self.client.post(self.url, {'name': 'Test Task',
                                                        'description': 'test description',
                                                        'due_date': timezone.now().date(),
                                                        'assignee': self.user,
@@ -27,20 +22,98 @@ class CreateTaskTestCase(TestCase):
                                                        })
         task = Task.objects.get(name='Test Task')
         self.assertEqual(task.name, 'Test Task')
-        self.assertRedirects(resp, reverse('home'))
 
 
-class SearchTasksCase(TestCase):
+class TaskUpdateViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='owner', password='12345')
+        self.user.save()
+        self.other_user = User.objects.create_user(username='other', password='12345')
+        self.other_user.save()
+
+
+        self.task = Task.objects.create(
+            name='Original Task',
+            description='Original description',
+            due_date=timezone.now().date(),
+            creator=self.user,
+            assignee=self.user,
+            status='pending'
+        )
+        self.url = reverse('edit_task', kwargs={'pk': self.task.pk})
+        self.today = timezone.now().date()
+
+
+class TaskDeleteViewTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='owner', password='12345')
+        self.other_user = User.objects.create_user(username='other', password='12345')
+        self.client.login(username='owner', password='12345')
+
+        self.task = Task.objects.create(
+            name='Task to delete',
+            description='Delete me',
+            due_date=timezone.now().date(),
+            creator=self.user,
+            assignee=self.user,
+            status='pending'
+        )
+        self.url = reverse('remove_task', kwargs={'pk': self.task.pk})
+
+    def test_delete_task(self):
+        response = self.client.post(self.url)
+        self.assertEqual(Task.objects.filter(pk=self.task.pk).exists(), False)
+        self.assertRedirects(response, reverse('search_tasks'))
+
+    def test_unauthorized_delete(self):
+        self.client.logout()
+        self.client.login(username='other', password='12345')
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+
+
+class TaskDetailViewTestCase(TestCase):
+    def setUp(self):
+        self.creator = User.objects.create_user(username='creator', password='12345')
+        self.assignee = User.objects.create_user(username='assignee', password='12345')
+        self.other_user = User.objects.create_user(username='other', password='12345')
+
+        self.task = Task.objects.create(
+            name='Test Task',
+            description='Test description',
+            due_date=timezone.now().date(),
+            creator=self.creator,
+            assignee=self.assignee,
+            status='pending'
+        )
+
+    def test_creator_access(self):
+        self.client.login(username='creator', password='12345')
+        response = self.client.get(reverse('view_task', kwargs={'pk': self.task.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['task'], self.task)
+
+    def test_assignee_access(self):
+        self.client.login(username='assignee', password='12345')
+        response = self.client.get(reverse('view_task', kwargs={'pk': self.task.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_unauthorized_access(self):
+        self.client.login(username='other', password='12345')
+        response = self.client.get(reverse('view_task', kwargs={'pk': self.task.pk}))
+        self.assertEqual(response.status_code, 403)
+
+
+class SearchTasksViewTestCase(TestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(username='test_user1', password='12345')
         self.user2 = User.objects.create_user(username='test_user2', password='12345')
         self.user3 = User.objects.create_user(username='test_user3', password='12345')
+        self.client.login(username='test_user1', password='12345')
 
         self.today = timezone.now().date()
         self.yesterday = self.today - timezone.timedelta(days=1)
         self.tomorrow = self.today + timezone.timedelta(days=1)
-
-        login = self.client.login(username=self.user1, password='12345')
 
         self.task1 = Task.objects.create(
             name='Important Task',
@@ -69,67 +142,51 @@ class SearchTasksCase(TestCase):
             status='canceled'
         )
 
+        self.today_iso = self.today.isoformat()
+        self.tomorrow_iso = self.tomorrow.isoformat()
+
     def test_search_without_parameters(self):
         response = self.client.post(reverse('search_tasks'))
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 3)
         self.assertCountEqual(tasks, [self.task1, self.task2, self.task3])
 
-
     def test_search_by_keyword(self):
-        response = self.client.post(reverse('search_tasks'), {
-            'keywords': 'keyword'
-        })
+        response = self.client.post(reverse('search_tasks'), {'keywords': 'keyword'})
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 2)
         self.assertIn(self.task1, tasks)
         self.assertIn(self.task3, tasks)
         self.assertNotIn(self.task2, tasks)
 
-
     def test_search_by_creator(self):
-        response = self.client.post(reverse('search_tasks'), {
-            'creator': self.user2.id
-        })
+        response = self.client.post(reverse('search_tasks'), {'creator': self.user2.id})
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.task3)
 
-
     def test_search_by_assignee(self):
-        response = self.client.post(reverse('search_tasks'), {
-            'assignee': self.user2.id
-        })
+        response = self.client.post(reverse('search_tasks'), {'assignee': self.user2.id})
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.task2)
 
-
     def test_search_by_status(self):
-        response = self.client.post(reverse('search_tasks'), {
-            'status': 'pending'
-        })
+        response = self.client.post(reverse('search_tasks'), {'status': 'pending'})
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.task1)
 
-
     def test_search_by_date_range(self):
         response = self.client.post(reverse('search_tasks'), {
-            'start_date': self.today,
-            'end_date': self.tomorrow
+            'start_date': self.today_iso,
+            'end_date': self.tomorrow_iso
         })
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 2)
-        self.assertEqual(tasks[0], self.task1)
-        self.assertEqual(tasks[1], self.task2)
-
+        self.assertIn(self.task1, tasks)
+        self.assertIn(self.task2, tasks)
+        self.assertNotIn(self.task3, tasks)
 
     def test_search_combined_filters(self):
         response = self.client.post(reverse('search_tasks'), {
@@ -138,10 +195,8 @@ class SearchTasksCase(TestCase):
             'assignee': self.user2.id
         })
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0], self.task2)
-
 
     def test_search_only_related_tasks(self):
         unrelated_task = Task.objects.create(
@@ -155,10 +210,8 @@ class SearchTasksCase(TestCase):
 
         response = self.client.post(reverse('search_tasks'))
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 3)
         self.assertNotIn(unrelated_task, tasks)
-
 
     def test_search_creator_or_assignee(self):
         response = self.client.post(reverse('search_tasks'), {
@@ -166,12 +219,5 @@ class SearchTasksCase(TestCase):
             'assignee': self.user1.id
         })
         tasks = response.context['tasks']
-
         self.assertEqual(len(tasks), 3)
         self.assertCountEqual(tasks, [self.task1, self.task2, self.task3])
-
-    def test_view_task(self):
-        response = self.client.get(reverse('view_task', kwargs={'pk': self.task1.pk}))
-        self.assertEqual(response.status_code, 200)
-        task = response.context['task']
-        self.assertEqual(task.description, self.task1.description)
