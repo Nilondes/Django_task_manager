@@ -23,8 +23,8 @@ Users can manage their own tasks and assign tasks to others.
 ## Getting started
 
 ```sh
-   git clone https://github.com/your-username/task-management-system.git
-   cd task-management-system
+   git clone https://github.com/nilondes/Django_task_manager.git
+   cd Django_task_manager
 ```
 
 The main directory should contain .env file:
