@@ -12,7 +12,6 @@ from functools import reduce
 import operator
 
 
-
 def home(request):
     return render(request, 'home.html')
 
@@ -78,7 +77,7 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 class TaskDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Task
     success_url = reverse_lazy('search_tasks')
-    template_name = 'tasks/task_confirm_delete.html'
+    template_name = 'tasks/search_tasks.html'
 
     def test_func(self):
         task = self.get_object()
@@ -141,12 +140,3 @@ def search_tasks(request):
     else:
         form = SearchTaskForm()
     return render(request, 'tasks/search_tasks.html', {'form': form})
-
-
-@login_required
-def view_task(request, pk):
-    task = Task.objects.get(pk=pk)
-    if task.creator != request.user and task.assignee != request.user:
-        return redirect('home')
-    context = {'task': task}
-    return render(request, 'tasks/view_task.html', context)
