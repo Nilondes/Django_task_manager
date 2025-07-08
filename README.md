@@ -38,7 +38,7 @@ PG_DATABASE=database
 To start Docker from main directory:
 
 ```sh
-$ docker compose up --build
+docker compose up --build
 
 ```
 
@@ -47,6 +47,6 @@ It will be available at http://localhost:8000
 To run tests:
 
 ```sh
-$ python /tasks/manage.py test
+python /tasks/manage.py test
 
 ```

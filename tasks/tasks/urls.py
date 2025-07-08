@@ -29,7 +29,7 @@ urlpatterns = [
     path('create_task/', TaskCreateView.as_view(), name='create_task'),
     path('edit_task/<int:pk>/', TaskUpdateView.as_view(), name='edit_task'),
     path('remove_task/<int:pk>/', TaskDeleteView.as_view(), name='remove_task'),
-    path('search_tasks/', search_tasks, name='search_tasks'),
-    path('search_tasks/<int:pk>/', TaskDetailView.as_view(), name='view_task'),
+    path('tasks/', search_tasks, name='search_tasks'),
+    path('tasks/<int:pk>/', TaskDetailView.as_view(), name='view_task'),
     path('admin/', admin.site.urls),
 ]
